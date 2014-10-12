@@ -1,0 +1,36 @@
+In partA.cpp there are no deadlocks because the processes send information
+to one another using pipes.
+
+The execution order is as following barber process starts first, then followed
+by the waiting room process and finally by the customer creatation process.
+After all three processes have been successfully forked, the parent goes into 
+a wait state.
+
+The barber process sets the barber ready flag to one and sends the information to the
+waiting room using pipe_1. It will then enter a while loop waiting to read information
+from the waiting room using pipe_2. While in the while loop, the barber will sleep for 
+a few seconds. After that it will check pipe_2 again. If information (customer PID) has 
+arrived, it will 'cut the customer's hair', and then send to the customer using pipe_4
+the customer's PID. After that it will go to the top of the infinite loop and continue
+this process all over again.
+
+The waiting room process sets the barber ready flag to zero and enters a while loop with the
+condition barber ready flag = 0. While this is true, the process will attempt to read from
+the customer process using pipe_3. It will continue to read from pipe_3 until there is
+information (customer's PID). Once it receives this, the waiting room process will push to
+a queue maintained with a linked list, the PID received if there are enough chairs for the 
+customer. If there are not enough chairs it will send the number of customers to the customer
+process in order for it to terminate. Then it will attempt to read from pipe_2, the barber ready
+flag set by the barber. If successfull, it will exit the while loop, and pop the first customer's
+PID from the queue and send it to the barber using pipe_1. After doing so, the waiting room process
+will decrement the number of customers before returning to the top of the infinite loop.
+
+The customer process will send to the waiting room process, its PID. It will then enter a while
+loop with condition number of customers less than the number of chairs. In this loop, it will
+attempt to read from pipe_3, and if sucessfull, will check if the value obtained is greater than
+the number of chairs available. If so, then the customer will quit. If not it will continue to
+check until it recieves something. Once it does, then the customer has moved from waiting room to
+the barber chair. It will then wait to receive information like it's own PID from pipe_4 to exit.
+
+The customer creatation process works in the background creating customers while the parent (main)
+waits until all the children have finished.

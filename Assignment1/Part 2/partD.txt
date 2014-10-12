@@ -1,0 +1,7 @@
+In partC.cpp, there many seem like there are no deadlocks however
+the program does not seem to be running correctly. This is due to
+some bugs in the code that still need to be fixed.
+
+The problem is that customers come in and get a haircut instantly
+without the barber seating them down. Therefore the waiting room
+is never used.
