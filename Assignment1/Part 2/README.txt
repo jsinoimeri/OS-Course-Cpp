@@ -24,3 +24,8 @@ To compile partC.cpp:
 
 
 The results of either file will be displayed in the terminal.
+
+
+
+
+PLEASE NOTE: The sleeping barber problem part C is not running correctly
