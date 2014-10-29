@@ -15,10 +15,11 @@
  *   File Name: partA.cpp                            *
  *                                                   *
  *   By: Jeton Sinoimeri                             *
+ *   Student Num: 100875046                          *
  *                                                   *
- *   Version: 1.5                                    *
+ *   Version: 1.6                                    *
  *   Created: Oct 5, 2014                            *
- *   Modified: Oct 10, 2014                          *
+ *   Modified: Oct 29, 2014                          *
  *                                                   *
  *****************************************************/
 
@@ -39,10 +40,10 @@ using namespace std;
 
 // function prototypes
 void barber(int barberTOwaiting_r, int barberTOwaiting_w, int barberTOcustomer);
-void waiting_room(int waitingTObarber_r, int waitingTObarber_w, int waitingTOcustomer, int customerTOwaiting);
-void create_customers(int waitingTOcustomer, int customerTOwaiting, int customerTObarber);
+void waiting_room(int waitingTOcustomer_r, int waitingTOcustomer_w, int waitingTObarber_r, int waitingTObarber_w);
+void create_customers(int customerTOwaiting_r, int customerTOwaiting_w, int customerTObarber);
 
-void customer(int waitingTOcustomer, int customerTOwaiting, int customerTObarber);
+void customer(int customerTOwaiting_r, int customerTOwaiting_w, int customerTObarber);
 void pop(int * pid);
 void push(int pid);
 
@@ -81,7 +82,9 @@ int main(void)
 	int pipe_1[2],                   // variable for pipe 1 array
 	 	  pipe_2[2],                   // variable for pipe 2 array
 	    pipe_3[2],	                 // variable for pipe 3 array
-	    pipe_4[2];
+	    pipe_4[2],                   // variable for pipe 4 array
+	    pipe_5[2];                   // variable for pipe 5 array
+	    
 	    
 	int barberProcess,               // variable to store process id for barber
 	    waitingRoomProcess,          // variable to store process id for waiting room
@@ -93,6 +96,7 @@ int main(void)
   pipe(pipe_2);
   pipe(pipe_3);
   pipe(pipe_4);
+  pipe(pipe_5);
   
   int barberTOwaiting_r = pipe_1[0];    // barber to waiting room reading pipe pointer
   int waitingTObarber_w = pipe_1[1];    // waiting room to barber writing pipe pointer
@@ -100,11 +104,14 @@ int main(void)
   int waitingTObarber_r = pipe_2[0];    // waiting room to barber reading pipe pointer
   int barberTOwaiting_w = pipe_2[1];    // barber to waiting room writing pipe pointer
   
-  int waitingTOcustomer = pipe_3[0];    // waiting room to customer reading pipe pointer
-  int customerTOwaiting = pipe_3[1];    // customer to waiting room writing pipe pointer
+  int waitingTOcustomer_r = pipe_3[0];  // waiting room to customer reading pipe pointer
+  int customerTOwaiting_w = pipe_3[1];  // customer to waiting room writing pipe pointer
 		
 	int customerTObarber = pipe_4[0];     // customer to barber reading pipe pointer 
 	int barberTOcustomer = pipe_4[1];	    // barber to customer writing pipe pointer
+	
+	int customerTOwaiting_r = pipe_5[0];  // customer to waiting room reading pipe pointer
+	int waitingTOcustomer_w = pipe_5[1];  // waiting room to customer writing pipe pointer
 		
 		
 		
@@ -154,8 +161,10 @@ int main(void)
 			// close one end of pipe communications
 			close(barberTOwaiting_r);
 			close(barberTOwaiting_w);
+			close(customerTOwaiting_r);
+			close(customerTOwaiting_w);
 					
-			waiting_room(waitingTObarber_r, waitingTObarber_w, waitingTOcustomer, customerTOwaiting);
+			waiting_room(waitingTOcustomer_r, waitingTOcustomer_w, waitingTObarber_r, waitingTObarber_w);
 		}
 		
 		
@@ -179,8 +188,10 @@ int main(void)
 				
 				// close one end of pipe
 				close(barberTOcustomer);
+				close(waitingTOcustomer_r);
+				close(waitingTOcustomer_w);
 				
-				create_customers(waitingTOcustomer, customerTOwaiting, customerTObarber);
+				create_customers(customerTOwaiting_r, customerTOwaiting_w, customerTObarber);
 			}
 	
 	    // parent process wait
@@ -270,7 +281,6 @@ void push(int pid)
 
 
 
-
 void barber(int barberTOwaiting_r, int barberTOwaiting_w, int barberTOcustomer)
 {
 	
@@ -278,6 +288,7 @@ void barber(int barberTOwaiting_r, int barberTOwaiting_w, int barberTOcustomer)
 	    cutTime,
 	    barberReady,
 	    customer_pid;	
+		
 		
 	while (true)
 	{
@@ -322,7 +333,7 @@ void barber(int barberTOwaiting_r, int barberTOwaiting_w, int barberTOcustomer)
 }
 
 
-void waiting_room(int waitingTObarber_r, int waitingTObarber_w, int waitingTOcustomer, int customerTOwaiting)
+void waiting_room(int waitingTOcustomer_r, int waitingTOcustomer_w, int waitingTObarber_r, int waitingTObarber_w)
 {	
 	
 	// get info from customer - waiting room pipe
@@ -344,7 +355,7 @@ void waiting_room(int waitingTObarber_r, int waitingTObarber_w, int waitingTOcus
 		
 			// waiting for customer pid to be received
 			while (customer_pid == -1)
-				read(waitingTOcustomer, &customer_pid, sizeof(customer_pid));
+				read(waitingTOcustomer_r, &customer_pid, sizeof(customer_pid));
 				
 			
 			cout << "Received from customer, this pid: " << customer_pid << endl;
@@ -358,7 +369,7 @@ void waiting_room(int waitingTObarber_r, int waitingTObarber_w, int waitingTOcus
 			}
 			
 			else
-				write(customerTOwaiting, &customerNum, sizeof(customerNum));
+				write(waitingTOcustomer_w, &customerNum, sizeof(customerNum));
 				
 
 			
@@ -382,7 +393,7 @@ void waiting_room(int waitingTObarber_r, int waitingTObarber_w, int waitingTOcus
 }
 
 
-void create_customers(int waitingTOcustomer, int customerTOwaiting, int customerTObarber)
+void create_customers(int customerTOwaiting_r, int customerTOwaiting_w, int customerTObarber)
 {
 	int timer = 0;
 	
@@ -407,17 +418,19 @@ void create_customers(int waitingTOcustomer, int customerTOwaiting, int customer
 		if (customerProcess == 0)
 		{ 
 			cout << "Successfully created customer process.\n";
-			customer(waitingTOcustomer, customerTOwaiting, customerTObarber);
+			customer(customerTOwaiting_r, customerTOwaiting_w, customerTObarber);
 		}
 		
 		// sleep for some time before creating another customer
-		sleep(2);		
+		sleep(1);		
 	}
 				
 }
 
 
-void customer(int waitingTOcustomer, int customerTOwaiting, int customerTObarber)
+
+
+void customer(int customerTOwaiting_r, int customerTOwaiting_w, int customerTObarber)
 {
 	
 	cout << "customer created" << endl;
@@ -426,23 +439,15 @@ void customer(int waitingTOcustomer, int customerTOwaiting, int customerTObarber
 	
 	
 	// write to pipe sending pid
-	write(customerTOwaiting, &pid, sizeof(pid));
+	write(customerTOwaiting_w, &pid, sizeof(pid));
 	
 	cout << "Customer with id: " << pid << " has entered the waiting room.\n";
 	
 	while (customerNum < MAXNUMCHAIRS)
 	{
 		  // gets message from waiting room in order to 
-	   read(waitingTOcustomer, &customerNum, sizeof(customerNum));
+	   read(customerTOwaiting_r, &customerNum, sizeof(customerNum));
 	   
-	   // rewrite customer pid to pipe
-	   if (customerNum == pid)
-	   {   	
-		  write(customerTOwaiting, &pid, sizeof(pid));
-		  
-		  customerNum = 0;
-		 }
-		 
 		 // check if customerNum exceedes MAXNUMCHAIRS
 	   if (customerNum > MAXNUMCHAIRS)
 	   {
