@@ -22,5 +22,11 @@ Assignment 1:
 
 Assignment 2:
 
+              This assignment is done in peers.
+              
+              Part 1 -> Answers to the questions in the pdf file
+              
+              Part 2 -> Designing and Implementating a Scheduler Simulator
+
 
 Assignment 3:
