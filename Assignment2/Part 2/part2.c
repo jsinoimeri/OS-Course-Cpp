@@ -15,6 +15,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <pthread.h>
+#include <sys/types.h>
 
 
 
@@ -42,7 +45,9 @@ void push(int pid, int arTime, int tCtime, int IOF, int IOD, Node **head, Node *
 void readFile(FILE *ptr_file, Node **head, Node **tail);
 void printList(Node *head, Node *tail);
 
-
+void timer(Node *pcb, int timeSpent);
+void IOExecution(Node *currentProcess, Node **head, Node **tail);
+void CPUExecution(Node **head, Node **tail);
 
 
 int main(void)
@@ -56,7 +61,19 @@ int main(void)
 	// read the file
 	readFile(ptr_file, &headReady, &tailReady);
 	
-	printList(headReady, tailReady);
+	Node *item;
+	//printList(headReady, tailReady);
+	//pop(&headReady, &item);
+	//timer(item, &headReady, &tailReady);
+	
+	//pop(&headReady, &item);
+	//timer(item, &headReady, &tailReady);
+	
+	while(headReady != NULL)
+		CPUExecution(&headReady, &tailReady);
+	
+	
+	
 	
 	
 	return 0;
@@ -92,6 +109,48 @@ void printList(Node *head, Node *tail)
 		printf("pid 3: %i Arrive_time: %i CPUTIME: %i IOFreq: %i IOdur: %i\n", head2 -> pID, head2 -> arrivalTime, head2 -> totalCPUTime, head2 -> IOFrequency, head2 -> IODuration);
 	}
 }  
+
+
+
+void CPUExecution(Node **head, Node **tail)
+{
+	Node *currentProcess;
+	
+	pop(head, &currentProcess);
+	
+	printf("The process ID: %i is entering CPUExecution\n", currentProcess -> pID);
+	
+	
+	int ioFreq = currentProcess -> IOFrequency;
+	
+	
+	if (currentProcess -> IOFrequency > 0 && currentProcess -> totalCPUTime > ioFreq)
+	{
+		currentProcess -> totalCPUTime = currentProcess -> totalCPUTime - currentProcess -> IOFrequency;
+		
+		timer(currentProcess, currentProcess -> IOFrequency);    // cpu exectution
+		
+		if (currentProcess -> totalCPUTime > 0)
+			IOExecution(currentProcess, head, tail);   // send to io device
+		
+	}
+	
+	else
+	{
+		timer(currentProcess, currentProcess -> totalCPUTime);
+		printf("The process ID: %i is complete CPUExecution\n", currentProcess -> pID);
+	}
+}
+
+
+void IOExecution(Node *currentProcess, Node **head, Node **tail)
+{
+	printf("PID: %i entering IOExecution\n", currentProcess -> pID);
+	timer(currentProcess, currentProcess -> IODuration);
+		
+	push(currentProcess -> pID, currentProcess -> arrivalTime, currentProcess -> totalCPUTime, currentProcess -> IOFrequency, currentProcess -> IODuration, head, tail);
+	printf("PID: %i leaving IOExecution\n", currentProcess -> pID);
+}
 
 
 
@@ -267,4 +326,23 @@ void readFile(FILE *ptr_file, Node **head, Node **tail)
   // close the file
   fclose(ptr_file);
 
+}
+
+
+void timer(Node *pcb, int timeSpent)
+{
+	time_t startTime,
+				 currentTime;
+	
+	time(&startTime);
+	
+	
+	while(currentTime - startTime != timeSpent)
+		time(&currentTime);
+	
+	
+	double diff = difftime(currentTime,startTime);
+	
+	printf("time: %lf\n", diff);
+	
 }
