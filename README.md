@@ -22,11 +22,27 @@ Assignment 1:
 
 Assignment 2:
 
-              This assignment is done in peers.
+              This assignment was done using peer programming techniques.
               
               Part 1 -> Answers to the questions in the pdf file
               
-              Part 2 -> Designing and Implementating a Scheduler Simulator
+              Part 2 -> Designing and Implementating a Scheduler Simulator using
+                        FCFS (First Come First Serve) scheduler and a externally
+                        based Priority scheduler.
+                        
+                        part2.c -> C source file that contains both schedulers
+                        
+                        Input.txt -> input file containing the "processes" that
+                                     the simulation needs to schedule.
+                                     
+              README.txt -> General information about the assingment, including
+                            list of files submitted, how to read the input file,
+                            how to compile and run the simulation, and how to test
+                            the simulation.
+                            
+              Report.docx -> This document contains the results of the 10 different
+                             test cases that we tested the simulation against to ensure
+                             that it worked properly.
 
 
 Assignment 3:
