@@ -6,7 +6,7 @@ Operating Systems course using C/C++
 
 Assignment 1:
 
-              Part 1 -> Answers to the questions in the pdf file
+              Part 1 -> Answers to the concept questions in the pdf file on course website.
               
               Part 2 -> Two programming solutions to the Sleeping Barber Problem. 
                         First solution uses pipes to communicate between the three
@@ -24,7 +24,7 @@ Assignment 2:
 
               This assignment was done using peer programming techniques.
               
-              Part 1 -> Answers to the questions in the pdf file
+              Part 1 -> Answers to the concept questions in the pdf file on course website.
               
               Part 2 -> Designing and Implementating a Scheduler Simulator using
                         FCFS (First Come First Serve) scheduler and a externally
@@ -46,3 +46,9 @@ Assignment 2:
 
 
 Assignment 3:
+
+              Part 1 -> Answers to the concept questions in the pdf file on course website.
+              
+              Part 2 -> Two different implementation of a simple prototype of an ATM machine
+                        system that uses IPC services (message queues). The first implementation
+                        uses processes while the second uses posix threads.
