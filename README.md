@@ -49,6 +49,7 @@ Assignment 3:
 
               Part 1 -> Answers to the concept questions in the pdf file on course website.
               
-              Part 2 -> Two different implementation of a simple prototype of an ATM machine
-                        system that uses IPC services (message queues). The first implementation
-                        uses processes while the second uses posix threads.
+              Part 2 -> Two different implementation of a simple prototype of an ATM
+                        machine system that uses IPC services (message queues). The
+                        first implementationuses processes while the second uses
+                        posix threads.
