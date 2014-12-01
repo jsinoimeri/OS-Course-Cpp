@@ -10,9 +10,22 @@
 #include <pthread.h>
 
 
-/***********************************************************
- 
- ***********************************************************/
+/****************************************************
+ *                                                  *
+ *    This file contains the optional part of the   *
+ *    assignment. The modification of partB.c was   *
+ *    the ability for the user to transfer funds    *
+ *    from one account to another, provided that    *
+ *    both accounts existed in the database.        *
+ *                                                  *
+ *    File: partC.c                                 *
+ *                                                  *
+ *    Name: Jeton Sinoimeri                         *
+ *    Name: Varun Sriram                            *
+ *                                                  *
+ *    Created: Nov 27, 2014                         *
+ *                                                  *
+ ****************************************************/
 
 
 
@@ -68,11 +81,21 @@ void writeFile(FILE *file, struct account accounts[]);
 
 
 
+/*****************************************************
+ *                                                   *
+ *   Main function reponsible for initializing the   *
+ *   database and running the program.               *
+ *                                                   *
+ *   Returns:                                        *
+ *            0: for successful termination          *
+ *                                                   *
+ *            1: for termination with error          *
+ *                                                   *
+ *****************************************************/
 
-
-
-int main (void){
-
+int main (void)
+{
+    // create the database of accounts
     struct account accounts[3];
     strcpy(accounts[0].accountNo, "00001");
     strcpy(accounts[0].pin, "218");
@@ -89,48 +112,67 @@ int main (void){
     accounts[2].funds = 112.00;
     accounts[2].numOfFailedAttempts = 0;
       
+      
+    // declaration of atm and dbEditor thread variables  
     pthread_t atmThread,
               dbEditorThread;
-          
+    
+    
+    // create the message queues      
  		int toDBServer_message = msgget(toDBServer_key, IPC_CREAT|0600);
     int dbServerTOatm_message = msgget(dbServerTOatm_key, IPC_CREAT|0600);
     
+    
+    // check if toDBServer message queue failed to be created
     if (toDBServer_message == -1)
     {
         perror("toDBServer_message failed");
         exit(1);
     }
     
+    
+    // check if dbServerTOatm message queue failed to be created
     if (dbServerTOatm_message == -1)
     {
         perror("dbServerTOatm_message failed");
         exit(1);
     }
     
+    
     else
     {
+    	// variable for the choice that user will enter
     	int choice;
-    	printf("Enter which operation you wish to do 1 for ATM or 2 for db editor: ");
+    	
+    	// ask for user input
+    	printf("Enter which operation you wish to do, 1 for ATM or 2 for db editor: ");
     	scanf("%i", &choice);
     	
+    	
+    	// create a struct of arguments to pass to the threads
     	struct args *arguments = (struct args*)malloc(sizeof(struct args));
     	arguments -> toDBServer_message = toDBServer_message;
     	arguments -> dbServerTOatm_message = dbServerTOatm_message;
     	arguments -> dbServerProcess = 1;
     	
+    	
+    	// create atm thread
     	if (choice == 1)
     		pthread_create(&atmThread, NULL, atm, (void *) arguments);
+    	
     		
+    	// create dbEditor thread	
     	else if (choice == 2)
     		pthread_create(&dbEditorThread, NULL, dbEditor, (void *) arguments);
     	
     	
+    	// main process runs dbServer
       dbServer(accounts, toDBServer_message, dbServerTOatm_message, 2);
 
     }
     
     
-    
+    // remove the message queues
     msgctl(toDBServer_message, IPC_RMID, 0);
     msgctl(dbServerTOatm_message, IPC_RMID, 0);
     
@@ -139,6 +181,29 @@ int main (void){
 }
 
 
+
+/*********************************************************
+ *                                                       *
+ *   Searches through the array of accounts to           *
+ *   find the account number.                            *
+ *                                                       *
+ *   parameter accounts[]: an array of account           *
+ *                         structs representing          *
+ *                         the database containing       *
+ *                         account information.          *
+ *                                                       *
+ *   parameter accountNo[]: char array representing      *
+ *                          the account number to be     *
+ *                          searched in the accounts[]   *
+ *                                                       *
+ *   Returns:                                            *
+ *             i: representing the index of where the    *
+ *                account is in the accounts[] if it     *
+ *                exists.                                *
+ *                                                       *
+ *            -1: if the account number does not exist   *
+ *                                                       *
+ *********************************************************/
 
 int search(struct account accounts[], char accountNo[])
 {
@@ -154,6 +219,24 @@ int search(struct account accounts[], char accountNo[])
     return -1;
 }
 
+
+
+/*****************************************************
+ *                                                   *
+ *   Writes the account information to a file.       *
+ *                                                   *
+ *   parameter *file: FILE pointer representing      *
+ *                    the address of the file to     *
+ *                    be written.                    *
+ *                                                   *
+ *   parameter accounts[]: an array of account       *
+ *                         structs representing      *
+ *                         the database containing   *
+ *                         account information.      *
+ *                                                   *
+ *****************************************************/
+
+
 void writeFile(FILE *file, struct account accounts[])
 {
     // open file
@@ -167,6 +250,34 @@ void writeFile(FILE *file, struct account accounts[])
     
     fclose(file);
 }
+
+
+
+/*********************************************************
+ *                                                       *
+ *   Checks that the pin provided be the user is         *
+ *   correct.                                            *
+ *                                                       *
+ *   parameter accounts[]: an array of account           *
+ *                         structs representing          *
+ *                         the database containing       *
+ *                         account information.          *
+ *                                                       *
+ *   parameter accountNo[]: char array representing      *
+ *                          the account number to be     *
+ *                          searched in the accounts[]   *
+ *                                                       *
+ *   parameter pin[]: char array representing the        *
+ *                    user's pin                         *
+ *                                                       *
+ *   Returns:                                            *
+ *            1: if the pin is correct                   *
+ *                                                       *
+ *            0: if the pin is incorrect                 *
+ *                                                       *
+ *           -1: if the account does not exist           *
+ *                                                       *
+ *********************************************************/
 
 int checkPin(struct account accounts[], char accountNo[], char pin[])
 {
@@ -187,15 +298,45 @@ int checkPin(struct account accounts[], char accountNo[], char pin[])
     return index;
 }
 
+
+/**************************************************************************
+ *                                                                        *
+ *   dbServer is responsible for receieving, processing information       *
+ *   received from the atm and db editor as well as sending information   *
+ *   back to the atm depending on the request receieved.                  *
+ *                                                                        *
+ *   parameter accounts[]: an array of account structs representing the   *
+ *                         database containingaccount information.        *
+ *                                                                        *
+ *   parameter toDBServer_message: integer representing the id of the     *
+ *                                 toDBServer message queue that the      *
+ *                                 server receieves messages from         *
+ *                                                                        *
+ *   parameter dbServerTOatm_message: integer representing the id of      *
+ *                                    the dbServerTOatm message queue     *
+ *                                    that the server sends messages to   *
+ *                                    the atm                             *
+ *                                                                        *
+ *   parameter atmProcess: integer representing the channel the atm is    *
+ *                         listening to on the dbServerTOatm message      *
+ *                         queue                                          *
+ *                                                                        *
+ **************************************************************************/
+
 void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOatm_message, int atmProcess)
 {
+	  // create and initialize the file pointer to null
     FILE *file = NULL;
+    
+    // declear the message struct
     struct alltypesmessage messages;
     
     while (1)
-    {
+    {	
+    	  // find the length of the message
         int msgLength = sizeof(struct alltypesmessage) - sizeof(long);
         
+        // attempt to receive messages and if an error occurs exit, otherwise continue
         if(msgrcv(toDBServer_message, &messages, msgLength, 1, 0) == -1)
         {
             perror("Server: receiving message failed.");
@@ -239,8 +380,10 @@ void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOa
                     // incorrect pin
                     else if (correctPin == 0)
                     {
+                    	  // check if account number exists
                         if(index != -1)
                         {
+                        	  // check if account number is going to be blocked
                             if(accounts[index].numOfFailedAttempts==2)
                             {
                                 accounts[index].accountNo[0] = 'X';
@@ -251,6 +394,8 @@ void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOa
                                 
                                 msgLength = sizeof(struct alltypesmessage) - sizeof(long);
                                 
+                                
+                                // send the message to the atm saying its blocked
                                 if (msgsnd(dbServerTOatm_message, &messages, msgLength, 0) == -1)
                                 {
                                     perror("Server: sending message failed.");
@@ -261,6 +406,7 @@ void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOa
                                     printf("Server: Account Blocked!");
                             }
                             
+                            // otherwise increment the number of failed attempts
                             else
                                 accounts[index].numOfFailedAttempts++;
 
@@ -330,7 +476,7 @@ void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOa
                 }
                 
                 else
-                    printf("Server send: %s\n", messages.message);
+                    printf("Server sent: %s\n", messages.message);
             }
             
 						// if it is a request funds message
@@ -439,6 +585,21 @@ void dbServer(struct account accounts[], int toDBServer_message, int dbServerTOa
     }
 }
 
+
+/*******************************************************
+ *                                                     *
+ *   Encrypts the pin the db editor has provided to    *
+ *   be stored in the database.                        *
+ *                                                     *
+ *   parameter x[]: char array representing the        *
+ *                  pin the db editor has provided     *
+ *                                                     *
+ *   parameter encryption[]: char array representing   *
+ *                           the encrypted pin that    *
+ *                           the dbserver will store   *
+ *                                                     *
+ *******************************************************/
+
 void encrypt(char x[], char encryption[])
 {    
     int i;
@@ -455,6 +616,23 @@ void encrypt(char x[], char encryption[])
     encryption[3] = '\0';
 
 }
+
+
+
+/*******************************************************
+ *                                                     *
+ *   Decrypts the pin in the database to compare       *
+ *   with the pin provided from atm                    *
+ *                                                     *
+ *   parameter x[]: char array representing the        *
+ *                  pin that exists in the database    *
+ *                                                     *
+ *   parameter decryption[]: char array representing   *
+ *                           the decrypted pin that    *
+ *                           is stored in the          *
+ *                           database                  *
+ *                                                     *
+ *******************************************************/
 
 void decrypt(char x[], char decryption[])
 {
@@ -473,6 +651,16 @@ void decrypt(char x[], char decryption[])
 }
 
 
+/**********************************************************
+ *                                                        *
+ *   DB editor is responsible for editing the database    *
+ *   that stores the account information for a user.      *
+ *                                                        *
+ *   parameter *arg: void pointer to an argument struct   *
+ *                   representing the arguments needed    *
+ *                   by the db editor                     *
+ *                                                        *
+ **********************************************************/
 
 void *dbEditor(void *arg)
 {
@@ -550,6 +738,22 @@ void *dbEditor(void *arg)
     }
 }
 
+
+/**********************************************************
+ *                                                        *
+ *   Atm is responsible for asking the user information   *
+ *   about the account, and the types of transactions     *
+ *   they wish to perform. For each series of prompts     *
+ *   the atm will send information to the server and      *
+ *   receive information from the server indicating       *
+ *   whether to proceed to the next prompt or restart     *
+ *   from the beginning.                                  *
+ *                                                        *
+ *   parameter *arg: void pointer to an argument struct   *
+ *                   representing the arguments needed    *
+ *                   by the atm                           *
+ *                                                        *
+ **********************************************************/
 
 void *atm(void *arg)
 {
@@ -636,6 +840,7 @@ void *atm(void *arg)
         else
         {
         	  printf("ATM received: %s\n", messages.message);
+						
 						// OK message received
             if (!strcmp("OK", messages.message))
             {
@@ -723,9 +928,11 @@ void *atm(void *arg)
                 }
             }
 
+            // Account blocked
             else if(!strcmp(messages.message, "Blocked"))
               printf("ATM: this account has been blocked access denied.\n");
-               
+            
+            // incorrect pin or account number   
             else if(!strcmp(messages.message, "NOT OK"))
             	printf("ATM: either account does not exist or pin is incorrect.\n");
         }
